@@ -1,14 +1,15 @@
 """
-In Django 1.4+, simply adds itself to the PASSWORD_HASHERS setting so old
+In Django 1.5+, simply adds itself to the PASSWORD_HASHERS setting so old
 passwords will be converted properly.
 
-Otherwise, overrides :class:`django.contrib.auth.models.User` to use bcrypt
-hashing for passwords.
+Otherwise, overrides :class:`django.contrib.auth.base_user.AbstractBaseUser`
+to use bcrypt hashing for passwords.
 
 You can set the following ``settings``:
 
 ``BCRYPT_ENABLED``
-   Enables bcrypt hashing when ``User.set_password()`` is called.
+   Enables bcrypt hashing when ``settings.AUTH_USER_MODEL.set_password()`` 
+   is called.
 
 ``BCRYPT_ENABLED_UNDER_TEST``
    Enables bcrypt hashing when running inside Django
@@ -25,7 +26,7 @@ You can set the following ``settings``:
 
 import bcrypt
 
-from django.contrib.auth.models import User
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.conf import settings
 from django.core import mail
 from django.utils.encoding import smart_str
@@ -57,15 +58,15 @@ def bcrypt_check_password(self, raw_password):
     Returns a boolean of whether the *raw_password* was correct.
 
     Attempts to validate with bcrypt, but falls back to Django's
-    ``User.check_password()`` if the hash is incorrect.
+    ``settings.AUTH_USER_MODEL.check_password()`` if the hash is incorrect.
 
     If ``BCRYPT_MIGRATE`` is set, attempts to convert sha1 password to bcrypt
     or converts between different bcrypt rounds values.
 
     .. note::
 
-        In case of a password migration this method calls ``User.save()`` to
-        persist the changes.
+        In case of a password migration this method calls 
+        ``settings.AUTH_USER_MODEL.save()`` to persist the changes.
     """
     pwd_ok = False
     should_change = False
@@ -107,7 +108,7 @@ try:
 
     settings.PASSWORD_HASHERS = settings.PASSWORD_HASHERS + ('django_bcrypt.models.LegacyDjangoBCryptPasswordHasher',)
 except ImportError:
-    _check_password = User.check_password
-    User.check_password = bcrypt_check_password
-    _set_password = User.set_password
-    User.set_password = bcrypt_set_password
+    _check_password = AbstractBaseUser.check_password
+    AbstractBaseUser.check_password = bcrypt_check_password
+    _set_password = AbstractBaseUser.set_password
+    AbstractBaseUser.set_password = bcrypt_set_password
